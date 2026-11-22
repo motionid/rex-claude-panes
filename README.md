@@ -20,6 +20,31 @@ Outside Rex the plugin does nothing.
 
 Or for one run: `claude --plugin-dir ~/Documents/rex-claude-panes`.
 
+## Layout
+
+- The first agent pane opens to the right of Claude.
+- Agents running at the same time stack below it on the right, up to 3.
+- Further agents open in a background Rex window.
+- Every agent's pane closes when that agent finishes.
+
+Set `REX_AGENT_MAX_PANES` (for example `REX_AGENT_MAX_PANES=1 claude`) to change how many panes stack on the right. `0` sends every agent to a background window.
+
+## Troubleshooting
+
+No pane appears:
+
+- Check that `rex` is on `PATH`.
+- Check that Claude was started inside a Rex terminal: `echo $REX_BLOCK` should print a block ID.
+- Check that the plugin is enabled: `/plugin` should list `rex-claude-panes`.
+
+A pane you close by hand is skipped next time. The stop hook then does nothing for that agent.
+
+## Development
+
+```bash
+npm test
+```
+
 ## Hook payload fields
 
 Confirmed on Claude Code 2.1.330:

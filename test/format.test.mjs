@@ -11,6 +11,10 @@ test("user string prompt is shown once as \"▶ task:\"", () => {
   assert.ok(lines[0].length <= 40);
 });
 
+test("injected system-reminder user messages are hidden", () => {
+  assert.deepEqual(formatEntry({ type: "user", message: { role: "user", content: "<system-reminder> Your final report…" } }), []);
+});
+
 test("assistant text is shown", () => {
   assert.deepEqual(formatEntry(assistant({ type: "text", text: "hi\nthere" })), ["hi", "there"]);
 });
