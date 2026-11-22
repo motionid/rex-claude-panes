@@ -1,0 +1,5 @@
+{
+  "name": "rex-claude-panes",
+  "version": "0.1.0",
+  "description": "Open a Rex pane for each Claude Code agent while it runs, and close it when the agent finishes"
+}

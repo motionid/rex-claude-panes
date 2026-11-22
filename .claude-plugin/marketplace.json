@@ -1,0 +1,5 @@
+{
+  "name": "rex-claude-panes",
+  "owner": { "name": "Sean" },
+  "plugins": [{ "name": "rex-claude-panes", "source": "./", "description": "Rex panes for Claude Code agents" }]
+}
