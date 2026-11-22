@@ -39,3 +39,10 @@ test("hidden kinds", () => {
   assert.deepEqual(formatEntry({ type: "api-request-blob", message: { role: "user", content: "x" } }), []);
   assert.deepEqual(formatEntry({ type: "attachment" }), []);
 });
+
+test("terminal control characters are stripped", () => {
+  const evil = "hi\x1b]52;c;ZXZpbA==\x07there\x1b[2J";
+  assert.deepEqual(formatEntry(assistant({ type: "text", text: evil })), ["hi]52;c;ZXZpbA==there[2J"]);
+  const [line] = formatEntry(assistant({ type: "tool_use", name: "Bash", input: { command: "echo \x1b[31mred" } }));
+  assert.ok(!line.includes("\x1b"));
+});
