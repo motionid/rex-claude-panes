@@ -16,7 +16,7 @@ rex-pi-agent's panes, but for Claude Code's native agents.
 - Pane closes when the agent finishes, including background agents.
 - Master–Stack layout from rex-pi-agent: first pane splits right of Claude
   (`$REX_BLOCK`); further concurrent panes split below the bottom-most live
-  agent pane on the right, up to 3; beyond that, a background Rex tab.
+  agent pane on the right, up to 3; beyond that, a background Rex window (`rex run` without `--split`).
 - Outside Rex (no `REX_SESSION`/`REX_BLOCK`), every hook is a silent no-op.
 
 ## Non-goals

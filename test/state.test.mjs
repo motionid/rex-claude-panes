@@ -1,11 +1,11 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
-import { mkdirSync, mkdtempSync, utimesSync } from "node:fs";
+import { mkdirSync, mkdtempSync, statSync, utimesSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
-import { withState } from "../lib/state.mjs";
+import { DEFAULT_DIR, withState } from "../lib/state.mjs";
 
 const run = promisify(execFile);
 const STATE = new URL("../lib/state.mjs", import.meta.url).href;
@@ -41,4 +41,11 @@ test("stale lock is broken", async () => {
   const start = Date.now();
   await withState("s", (s) => { s.stack.push("b"); }, dir);
   assert.ok(Date.now() - start < 1000);
+});
+
+test("state dir is per-user and private", async () => {
+  assert.ok(DEFAULT_DIR.endsWith(`rex-claude-panes-${process.getuid()}`));
+  const dir = join(tmp(), "fresh");
+  await withState("s", () => {}, dir);
+  assert.equal(statSync(dir).mode & 0o777, 0o700);
 });

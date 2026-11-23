@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { chmodSync, mkdirSync as mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { utimesSync, chmodSync, mkdirSync as mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { handle } from "../lib/hook.mjs";
@@ -17,7 +17,7 @@ const payload = (agent_id, agent_type = "Explore") => ({
   agent_type,
 });
 
-function fakeRex({ splitFails = false, splitTimesOut = false } = {}) {
+function fakeRex({ splitFails = false, splitTimesOut = false, closeFails = false } = {}) {
   let n = 0;
   const live = new Set();
   const calls = [];
@@ -36,7 +36,7 @@ function fakeRex({ splitFails = false, splitTimesOut = false } = {}) {
     blockExists: (b) => live.has(b),
     closeBlock(b) {
       calls.push(["close", b]);
-      live.delete(b);
+      if (!closeFails) live.delete(b);
     },
   };
 }
@@ -103,6 +103,33 @@ test("timed-out split does not fall back to a second pane", async () => {
   const d = deps(fakeRex({ splitTimesOut: true }));
   await handle("start", payload("a1"), d);
   assert.equal(d.rex.calls.length, 1);
+});
+
+test("a repeated start for the same agent closes its old pane", async () => {
+  const d = deps(fakeRex());
+  await handle("start", payload("a1"), d);
+  await handle("start", payload("a1"), d);
+  assert.ok(d.rex.calls.some(([k, b]) => k === "close" && b === "block:1"));
+  assert.equal(mapping(d, "a1"), "block:2");
+});
+
+test("a failed close keeps the record", async () => {
+  const d = deps(fakeRex({ closeFails: true }));
+  await handle("start", payload("a1"), d);
+  await handle("stop", payload("a1"), d);
+  assert.equal(mapping(d, "a1"), "block:1");
+});
+
+test("records older than a day are closed and removed on start", async () => {
+  const d = deps(fakeRex());
+  await handle("start", payload("old"), d);
+  const file = join(d.stateDir, "sess-1.agents", "old");
+  const twoDaysAgo = (Date.now() - 2 * 86400_000) / 1000;
+  utimesSync(file, twoDaysAgo, twoDaysAgo);
+  await handle("start", payload("a2"), d);
+  assert.ok(d.rex.calls.some(([k, b]) => k === "close" && b === "block:1"));
+  assert.equal(mapping(d, "old"), null);
+  assert.equal(mapping(d, "a2"), "block:2");
 });
 
 test("stop for unknown agent is a no-op", async () => {

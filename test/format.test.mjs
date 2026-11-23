@@ -46,3 +46,8 @@ test("terminal control characters are stripped", () => {
   const [line] = formatEntry(assistant({ type: "tool_use", name: "Bash", input: { command: "echo \x1b[31mred" } }));
   assert.ok(!line.includes("\x1b"));
 });
+
+test("a malformed block does not drop its siblings", () => {
+  const lines = formatEntry(assistant({ type: "tool_use", name: "X", input: null }, { type: "text" }, { type: "text", text: "ok" }));
+  assert.deepEqual(lines, ["• X {}", "", "ok"]);
+});

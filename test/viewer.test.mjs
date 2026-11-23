@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { appendFileSync, copyFileSync, mkdtempSync, writeFileSync } from "node:fs";
+const newPath = () => join(mkdtempSync(join(tmpdir(), "viewer-")), "agent.jsonl");
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -49,4 +50,26 @@ test("viewer waits for a missing file", async () => {
   });
   assert.match(out, /late file/);
   assert.ok(alive);
+});
+
+test("a multi-byte character split across reads is decoded", async () => {
+  const path = newPath();
+  const bytes = Buffer.from('{"type":"assistant","message":{"content":[{"type":"text","text":"café"}]}}\n');
+  const cut = bytes.indexOf(0xc3) + 1; // between the two bytes of é
+  writeFileSync(path, bytes.subarray(0, cut));
+  const { out } = await runViewer(path, async () => {
+    await sleep(400);
+    appendFileSync(path, bytes.subarray(cut));
+  });
+  assert.match(out, /café/);
+});
+
+test("viewer restarts when the file shrinks", async () => {
+  const path = newPath();
+  copyFileSync(FIXTURE, path);
+  const { out } = await runViewer(path, async () => {
+    await sleep(400);
+    writeFileSync(path, '{"type":"assistant","message":{"content":[{"type":"text","text":"after shrink"}]}}\n');
+  });
+  assert.match(out, /after shrink/);
 });
